@@ -1,4 +1,5 @@
 #### Vue
 - [vueflow](https://vueflow.dev/)
+- [X6](https://github.com/antvis/X6)
 - [LogicFlow](https://github.com/didi/LogicFlow)
 - [bpmn](https://bpmn.io/)
