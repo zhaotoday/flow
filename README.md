@@ -7,5 +7,6 @@
 
 #### React
 - [reactflow](https://reactflow.dev/examples)
+- [svelteflow](https://svelteflow.dev/examples)
 - [reaflow](https://reaflow.dev/)
 - [react-diagrams](https://github.com/projectstorm/react-diagrams)
