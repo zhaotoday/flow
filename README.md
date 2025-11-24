@@ -17,3 +17,4 @@
 - Inspect.exe（Windows SDK）
 - [Accessibility Insights for Windows](https://accessibilityinsights.io/)
 - UISpy / UIAVerify
+- [WinAppDriver](https://github.com/microsoft/WinAppDriver)
