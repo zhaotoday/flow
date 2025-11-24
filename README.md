@@ -15,6 +15,9 @@
 #### 开源
 - [automatisch](https://github.com/automatisch/automatisch)
 
+#### 平台
+- [pipedream](https://pipedream.com/)
+
 #### 工具
 - [Appium Inspector](https://github.com/appium/appium-inspector)
 - Inspect.exe（Windows SDK）
