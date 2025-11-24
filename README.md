@@ -12,6 +12,9 @@
 - [reaflow](https://reaflow.dev/)
 - [react-diagrams](https://github.com/projectstorm/react-diagrams)
 
+#### 开源
+- [automatisch](https://github.com/automatisch/automatisch)
+
 #### 工具
 - [Appium Inspector](https://github.com/appium/appium-inspector)
 - Inspect.exe（Windows SDK）
