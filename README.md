@@ -13,6 +13,7 @@
 - [react-diagrams](https://github.com/projectstorm/react-diagrams)
 
 #### 工具
+- [Appium Inspector](https://github.com/appium/appium-inspector)
 - Inspect.exe（Windows SDK）
 - [Accessibility Insights for Windows](https://accessibilityinsights.io/)
 - UISpy / UIAVerify
