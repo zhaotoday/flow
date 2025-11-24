@@ -15,3 +15,4 @@
 #### 工具
 - Inspect.exe（Windows SDK）
 - [Accessibility Insights for Windows](https://accessibilityinsights.io/)
+- UISpy / UIAVerify
