@@ -15,6 +15,7 @@
 #### 开源
 - [automatisch](https://github.com/automatisch/automatisch)
 - [TagUI](https://github.com/aisingapore/TagUI)
+- [windmill](https://github.com/windmill-labs/windmill)
 
 #### 平台
 - [pipedream](https://pipedream.com/)
