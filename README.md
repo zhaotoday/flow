@@ -2,21 +2,32 @@
 
 ## 项目简介
 
-本项目是一个面向云手机平台的 RPA(Robotic Process Automation)自动化流程执行引擎,旨在提供高效、灵活、可扩展的自动化任务编排与执行能力。
+本项目专注于云手机自动化流程的数据格式定义和流程执行器的实现,基于 JSON Schema 驱动的节点化流程编排。
 
-## 核心特性
+## 核心功能
 
-- **可视化流程编排**: 支持拖拽式流程设计,直观的图形化界面
-- **丰富的节点类型**: 支持开始/结束节点、操作节点、条件分支、循环等多种节点
-- **JSON Schema 驱动**: 通过 JSON Schema 定义节点输入输出,类型安全
-- **云手机适配**: 专为云手机环境优化,支持批量设备管理与并发执行
-- **灵活编排**: 提供丰富的操作指令集,支持复杂业务场景的流程编排
+- **流程数据格式定义**: 标准化的 JSON 流程格式,支持节点嵌套和数据流转
+- **流程执行引擎**: 解析和执行流程定义,支持条件分支、循环等控制流
+- **类型安全**: 完整的 TypeScript 类型定义,确保流程数据的正确性
 
-## 流程模板格式
+## 流程数据格式
 
-### 简单示例
+### 基础结构
 
-以下是一个包含 Start 节点、点击操作节点、If 条件节点和 Loop 循环节点的完整流程示例:
+流程由节点(nodes)组成,每个节点包含:
+- `id`: 节点唯一标识
+- `type`: 节点类型(start/end/click/swipe/input/if/loop等)
+- `blocks`: 子节点数组(用于嵌套结构)
+- `data`: 节点数据,包含 title、inputsValues、inputs、outputs
+
+### 数据值类型
+
+节点的 `inputsValues` 支持三种值类型:
+- `constant`: 常量值 `{ type: "constant", content: value }`
+- `ref`: 引用其他节点输出 `{ type: "ref", content: ["nodeId", "field"] }`
+- `template`: 模板字符串 `{ type: "template", content: "text_{{variable}}" }`
+
+### 完整示例
 
 ```json
 {
@@ -34,21 +45,13 @@
               "type": "string",
               "default": "com.ss.android.ugc.aweme"
             },
-            "clickCount": {
-              "type": "number",
-              "default": 5
-            },
             "elements": {
               "type": "array",
               "items": {
                 "type": "object",
                 "properties": {
-                  "selector": {
-                    "type": "string"
-                  },
-                  "enabled": {
-                    "type": "boolean"
-                  }
+                  "selector": { "type": "string" },
+                  "enabled": { "type": "boolean" }
                 }
               }
             }
@@ -74,40 +77,21 @@
           "clickType": {
             "type": "constant",
             "content": "double"
-          },
-          "delay": {
-            "type": "constant",
-            "content": 300
           }
         },
         "inputs": {
           "type": "object",
           "required": ["selector", "clickType"],
           "properties": {
-            "selector": {
-              "type": "object",
-              "description": "元素定位信息"
-            },
-            "clickType": {
-              "type": "string",
-              "enum": ["single", "double", "long"],
-              "description": "点击类型"
-            },
-            "delay": {
-              "type": "number",
-              "description": "点击后延迟(ms)"
-            }
+            "selector": { "type": "object" },
+            "clickType": { "type": "string", "enum": ["single", "double", "long"] }
           }
         },
         "outputs": {
           "type": "object",
           "properties": {
-            "success": {
-              "type": "boolean"
-            },
-            "timestamp": {
-              "type": "number"
-            }
+            "success": { "type": "boolean" },
+            "timestamp": { "type": "number" }
           }
         }
       }
@@ -127,9 +111,7 @@
           "type": "object",
           "required": ["condition"],
           "properties": {
-            "condition": {
-              "type": "boolean"
-            }
+            "condition": { "type": "boolean" }
           }
         }
       },
@@ -137,17 +119,13 @@
         {
           "id": "if_true_0",
           "type": "ifBlock",
-          "data": {
-            "title": "true"
-          },
+          "data": { "title": "true" },
           "blocks": []
         },
         {
           "id": "if_false_0",
           "type": "ifBlock",
-          "data": {
-            "title": "false"
-          },
+          "data": { "title": "false" },
           "blocks": []
         }
       ]
@@ -177,18 +155,6 @@
                 "type": "constant",
                 "content": "single"
               }
-            },
-            "inputs": {
-              "type": "object",
-              "required": ["selector", "clickType"],
-              "properties": {
-                "selector": {
-                  "type": "object"
-                },
-                "clickType": {
-                  "type": "string"
-                }
-              }
             }
           }
         }
@@ -204,9 +170,7 @@
           "success": {
             "type": "constant",
             "content": true,
-            "schema": {
-              "type": "boolean"
-            }
+            "schema": { "type": "boolean" }
           }
         }
       }
@@ -215,253 +179,269 @@
 }
 ```
 
-### 点击操作节点详细数据结构
+## 操作节点数据结构
+
+### 点击节点 (click)
 
 ```typescript
-// 点击节点完整示例
-const clickNodeExample: FlowNodeJSON = {
-  id: "click_like_button",
-  type: "click",
-  blocks: [],
-  data: {
-    title: "点赞按钮",
-    inputsValues: {
-      // 元素选择器 - 支持多种定位方式
-      selector: {
-        type: "constant",
-        content: {
-          // 方式1: 坐标定位
-          type: "coordinate",
-          x: "50%",  // 支持百分比或像素值
-          y: "50%"
-        }
-        // 方式2: 元素ID定位
-        // type: "constant",
-        // content: {
-        //   type: "id",
-        //   value: "com.example:id/like_button"
-        // }
-        // 方式3: XPath定位
-        // type: "constant",
-        // content: {
-        //   type: "xpath",
-        //   value: "//android.widget.Button[@text='点赞']"
-        // }
-        // 方式4: 文本定位
-        // type: "constant",
-        // content: {
-        //   type: "text",
-        //   value: "点赞",
-        //   exact: false  // 是否精确匹配
-        // }
-      },
-      
-      // 点击类型
-      clickType: {
-        type: "constant",
-        content: "double"  // single | double | long
-      },
-      
-      // 点击延迟
-      delay: {
-        type: "constant",
-        content: 300  // 毫秒
-      },
-      
-      // 可选: 点击前等待元素出现
-      waitFor: {
-        type: "constant",
-        content: {
-          enabled: true,
-          timeout: 5000,  // 超时时间
-          checkInterval: 500  // 检查间隔
-        }
-      },
-      
-      // 可选: 失败重试
-      retry: {
-        type: "constant",
-        content: {
-          enabled: true,
-          maxRetries: 3,
-          retryInterval: 1000
-        }
-      }
-    },
-    
-    // 输入定义
-    inputs: {
-      type: "object",
-      required: ["selector", "clickType"],
-      properties: {
-        selector: {
-          type: "object",
-          description: "元素定位信息"
-        },
-        clickType: {
-          type: "string",
-          enum: ["single", "double", "long"],
-          description: "点击类型: single-单击, double-双击, long-长按"
-        },
-        delay: {
-          type: "number",
-          description: "点击后延迟时间(ms)",
-          default: 0
-        },
-        waitFor: {
-          type: "object",
-          description: "等待配置"
-        },
-        retry: {
-          type: "object",
-          description: "重试配置"
-        }
-      }
-    },
-    
-    // 输出定义
-    outputs: {
-      type: "object",
-      properties: {
-        success: {
-          type: "boolean",
-          description: "是否点击成功"
-        },
-        timestamp: {
-          type: "number",
-          description: "执行时间戳"
-        },
-        elementFound: {
-          type: "boolean",
-          description: "元素是否找到"
-        },
-        error: {
-          type: "string",
-          description: "错误信息(如果失败)"
-        }
-      }
-    }
-  }
-};
-```
-
-### 其他常用操作节点示例
-
-#### 滑动节点
-```json
 {
-  "id": "swipe_0",
-  "type": "swipe",
+  "id": "click_0",
+  "type": "click",
   "data": {
-    "title": "上滑刷新",
+    "title": "点击操作",
     "inputsValues": {
-      "direction": {
+      "selector": {
         "type": "constant",
-        "content": "up"
+        "content": {
+          "type": "coordinate",  // 或 "id" | "xpath" | "text" | "image"
+          "x": "50%",
+          "y": "50%"
+        }
       },
-      "distance": {
+      "clickType": {
         "type": "constant",
-        "content": "80%"
+        "content": "single"  // "single" | "double" | "long"
       },
-      "duration": {
+      "delay": {
         "type": "constant",
         "content": 300
       }
     },
     "inputs": {
       "type": "object",
-      "required": ["direction"],
+      "required": ["selector", "clickType"],
       "properties": {
-        "direction": {
-          "type": "string",
-          "enum": ["up", "down", "left", "right"]
-        },
-        "distance": {
-          "type": "string",
-          "description": "滑动距离(支持百分比)"
-        },
-        "duration": {
-          "type": "number",
-          "description": "滑动时长(ms)"
-        }
-      }
-    }
-  }
-}
-```
-
-#### 输入文本节点
-```json
-{
-  "id": "input_0",
-  "type": "input",
-  "data": {
-    "title": "输入搜索关键词",
-    "inputsValues": {
-      "selector": {
-        "type": "constant",
-        "content": {
-          "type": "id",
-          "value": "com.example:id/search_input"
-        }
-      },
-      "text": {
-        "type": "ref",
-        "content": ["start_0", "keyword"]
-      },
-      "clearBefore": {
-        "type": "constant",
-        "content": true
-      }
-    },
-    "inputs": {
-      "type": "object",
-      "required": ["selector", "text"],
-      "properties": {
-        "selector": {
-          "type": "object"
-        },
-        "text": {
-          "type": "string"
-        },
-        "clearBefore": {
-          "type": "boolean",
-          "description": "输入前是否清空"
-        }
-      }
-    }
-  }
-}
-```
-
-#### 截图节点
-```json
-{
-  "id": "screenshot_0",
-  "type": "screenshot",
-  "data": {
-    "title": "截图保存",
-    "inputsValues": {
-      "filename": {
-        "type": "template",
-        "content": "screenshot_{{timestamp}}.png"
-      },
-      "quality": {
-        "type": "constant",
-        "content": 90
+        "selector": { "type": "object" },
+        "clickType": { "type": "string", "enum": ["single", "double", "long"] },
+        "delay": { "type": "number" }
       }
     },
     "outputs": {
       "type": "object",
       "properties": {
-        "path": {
-          "type": "string"
-        },
-        "size": {
-          "type": "number"
-        }
+        "success": { "type": "boolean" },
+        "timestamp": { "type": "number" }
       }
     }
   }
 }
 ```
+
+### 滑动节点 (swipe)
+
+```json
+{
+  "id": "swipe_0",
+  "type": "swipe",
+  "data": {
+    "title": "滑动操作",
+    "inputsValues": {
+      "direction": { "type": "constant", "content": "up" },
+      "distance": { "type": "constant", "content": "80%" },
+      "duration": { "type": "constant", "content": 300 }
+    },
+    "inputs": {
+      "type": "object",
+      "required": ["direction"],
+      "properties": {
+        "direction": { "type": "string", "enum": ["up", "down", "left", "right"] },
+        "distance": { "type": "string" },
+        "duration": { "type": "number" }
+      }
+    }
+  }
+}
+```
+
+### 输入节点 (input)
+
+```json
+{
+  "id": "input_0",
+  "type": "input",
+  "data": {
+    "title": "输入文本",
+    "inputsValues": {
+      "selector": {
+        "type": "constant",
+        "content": { "type": "id", "value": "com.example:id/search" }
+      },
+      "text": { "type": "ref", "content": ["start_0", "keyword"] },
+      "clearBefore": { "type": "constant", "content": true }
+    },
+    "inputs": {
+      "type": "object",
+      "required": ["selector", "text"],
+      "properties": {
+        "selector": { "type": "object" },
+        "text": { "type": "string" },
+        "clearBefore": { "type": "boolean" }
+      }
+    }
+  }
+}
+```
+
+## TypeScript 类型定义
+
+完整类型定义见 `types/flow.ts`,核心类型包括:
+
+```typescript
+// 流程文档
+interface FlowDocumentJSON {
+  nodes: FlowNodeJSON[];
+}
+
+// 流程节点
+interface FlowNodeJSON {
+  id: string;
+  type: string;
+  blocks?: FlowNodeJSON[];
+  data: {
+    title?: string;
+    inputsValues?: Record<string, FlowValue>;
+    inputs?: JsonSchema;
+    outputs?: JsonSchema;
+    [key: string]: any;
+  };
+}
+
+// 流程值类型
+type FlowValue = 
+  | { type: 'constant'; content: any; schema?: JsonSchema }
+  | { type: 'ref'; content: string[] }
+  | { type: 'template'; content: string };
+
+// 流程执行上下文
+interface FlowContext {
+  instanceId: string;
+  flow: FlowDocumentJSON;
+  variables: Map<string, any>;
+  currentNodeId?: string;
+  status: FlowStatus;
+  nodeExecutions: Map<string, NodeExecution>;
+}
+
+// 节点执行器接口
+interface NodeExecutor {
+  type: string;
+  execute(node: FlowNodeJSON, context: FlowContext): Promise<any>;
+  validate?(node: FlowNodeJSON): boolean;
+}
+
+// 流程引擎接口
+interface FlowEngine {
+  loadFlow(flow: FlowDocumentJSON): void;
+  startFlow(variables?: Record<string, any>): Promise<FlowContext>;
+  pauseFlow(instanceId: string): Promise<void>;
+  resumeFlow(instanceId: string): Promise<void>;
+  stopFlow(instanceId: string): Promise<void>;
+  registerExecutor(executor: NodeExecutor): void;
+}
+```
+
+## 流程执行器实现
+
+### 执行器接口
+
+每个节点类型需要实现 `NodeExecutor` 接口:
+
+```typescript
+class ClickNodeExecutor implements NodeExecutor {
+  type = 'click';
+  
+  async execute(node: FlowNodeJSON, context: FlowContext): Promise<any> {
+    const { selector, clickType, delay } = this.resolveInputs(node, context);
+    
+    // 执行点击操作
+    const result = await this.performClick(selector, clickType);
+    
+    // 延迟
+    if (delay) {
+      await sleep(delay);
+    }
+    
+    return {
+      success: result.success,
+      timestamp: Date.now()
+    };
+  }
+  
+  validate(node: FlowNodeJSON): boolean {
+    // 验证节点配置
+    return node.data?.inputsValues?.selector && 
+           node.data?.inputsValues?.clickType;
+  }
+  
+  private resolveInputs(node: FlowNodeJSON, context: FlowContext) {
+    // 解析节点输入值(处理 constant/ref/template)
+    // ...
+  }
+  
+  private async performClick(selector: any, clickType: string) {
+    // 执行实际点击操作
+    // ...
+  }
+}
+```
+
+### 引擎实现
+
+```typescript
+class FlowEngineImpl implements FlowEngine {
+  private executors = new Map<string, NodeExecutor>();
+  
+  registerExecutor(executor: NodeExecutor): void {
+    this.executors.set(executor.type, executor);
+  }
+  
+  async startFlow(variables?: Record<string, any>): Promise<FlowContext> {
+    const context = this.createContext(variables);
+    await this.executeNodes(this.flow.nodes, context);
+    return context;
+  }
+  
+  private async executeNodes(nodes: FlowNodeJSON[], context: FlowContext) {
+    for (const node of nodes) {
+      const executor = this.executors.get(node.type);
+      if (!executor) {
+        throw new Error(`No executor for node type: ${node.type}`);
+      }
+      
+      context.currentNodeId = node.id;
+      const result = await executor.execute(node, context);
+      context.variables.set(node.id, result);
+      
+      // 处理子节点
+      if (node.blocks?.length) {
+        await this.executeNodes(node.blocks, context);
+      }
+    }
+  }
+}
+```
+
+## 项目结构
+
+```
+rpa-executor/
+├── types/
+│   └── flow.ts              # TypeScript 类型定义
+├── examples/
+│   └── simple-flow.json     # 流程示例
+├── src/
+│   ├── engine/
+│   │   ├── flow-engine.ts   # 流程引擎实现
+│   │   └── context.ts       # 执行上下文
+│   ├── executors/
+│   │   ├── click.ts         # 点击节点执行器
+│   │   ├── swipe.ts         # 滑动节点执行器
+│   │   ├── input.ts         # 输入节点执行器
+│   │   ├── if.ts            # 条件节点执行器
+│   │   └── loop.ts          # 循环节点执行器
+│   └── utils/
+│       ├── value-resolver.ts # 值解析器(处理 constant/ref/template)
+│       └── selector.ts       # 元素选择器
+└── README.md
+```
+
