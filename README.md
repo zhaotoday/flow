@@ -16,6 +16,7 @@
 - [automatisch](https://github.com/automatisch/automatisch)
 - [TagUI](https://github.com/aisingapore/TagUI)
 - [windmill](https://github.com/windmill-labs/windmill)
+- [flowiseai](https://docs.flowiseai.com/)
 
 #### 平台
 - [pipedream](https://pipedream.com/)
@@ -26,3 +27,4 @@
 - [Accessibility Insights for Windows](https://accessibilityinsights.io/)
 - UISpy / UIAVerify
 - [WinAppDriver](https://github.com/microsoft/WinAppDriver)
+
