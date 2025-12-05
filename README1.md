@@ -106,7 +106,7 @@ flowchart TD
     ActionNode --> Report
     EndNode --> Report
     
-    Report[5. 生成执行报告<br/>• status: success/failed<br/>• nodeRecords[]<br/>• duration] --> Upload[6. 上报执行结果<br/>• runtime.end()<br/>• 输出日志]
+    Report[5. 生成执行报告<br/>• status: success/failed<br/>• nodeRecords<br/>• duration] --> Upload[6. 上报执行结果<br/>• runtime.end<br/>• 输出日志]
     Upload --> End([执行完成])
     
     style Start fill:#4caf50,color:#fff
@@ -121,16 +121,16 @@ flowchart TD
 flowchart TD
     InitParams[initialParams<br/>初始参数] --> StartNode
     
-    StartNode["start 节点<br/>outputs: { 视频文件, 视频描述 }"]
+    StartNode["start 节点<br/>outputs: 视频文件, 视频描述"]
     StartNode -.->|ref 引用| OpenApp
     
-    OpenApp["openApp 节点<br/>inputs: { url: ref[start, 视频文件] }<br/>outputs: { packageName }"]
+    OpenApp["openApp 节点<br/>inputs: url = ref(start, 视频文件)<br/>outputs: packageName"]
     OpenApp -.->|ref 引用| WaitElem
     
-    WaitElem["waitElem 节点<br/>inputs: { selector: constant[...] }<br/>outputs: { element }"]
+    WaitElem["waitElem 节点<br/>inputs: selector = constant(...)<br/>outputs: element"]
     WaitElem -.->|ref 引用| Click
     
-    Click["click 节点<br/>inputs: { selectorRef: ref[waitElem, element] }<br/>outputs: { element }"]
+    Click["click 节点<br/>inputs: selectorRef = ref(waitElem, element)<br/>outputs: element"]
     Click -.->|ref 引用| EndNode
     
     EndNode["end 节点<br/>inputs: { success: constant[true] }"]
@@ -138,7 +138,7 @@ flowchart TD
     
     subgraph Storage["数据存储: ExecutionContext.outputs (Map)"]
         direction TB
-        Store["nodeId → outputs<br/>━━━━━━━━━━━━━━━━<br/>start_0 → { 视频文件: ... }<br/>openApp_0 → { packageName: ... }<br/>waitElem_0 → { element: {...} }<br/>click_0 → { element: {...} }<br/>loop_0_locals → { item: 0, ... }"]
+        Store["nodeId → outputs<br/>━━━━━━━━━━━━━━━━<br/>start_0 → 视频文件: ...<br/>openApp_0 → packageName: ...<br/>waitElem_0 → element: ...<br/>click_0 → element: ...<br/>loop_0_locals → item: 0, ..."]
     end
     
     style InitParams fill:#4caf50,color:#fff
@@ -289,9 +289,9 @@ flowchart TD
     
     Wait1["③ waitTime 节点<br/>━━━━━━━━━━<br/>等待应用启动完成<br/>waitTime: 3000ms"]
     
-    WaitElem["④ waitElement 节点<br/>━━━━━━━━━━<br/>等待'发布'按钮出现<br/>selector: [{ mode: textContains, text: 发布 }]<br/>输出: element (元素对象)"]
+    WaitElem["④ waitElement 节点<br/>━━━━━━━━━━<br/>等待'发布'按钮出现<br/>selector: mode=textContains, text=发布<br/>输出: element (元素对象)"]
     
-    Click["⑤ click 节点<br/>━━━━━━━━━━<br/>点击发布按钮<br/>selectorRef: ref[waitElement_0, element]<br/>actionEvent: click"]
+    Click["⑤ click 节点<br/>━━━━━━━━━━<br/>点击发布按钮<br/>selectorRef: ref(waitElement_0, element)<br/>actionEvent: click"]
     
     Wait2["⑥ waitTime 节点<br/>━━━━━━━━━━<br/>等待上传页面加载<br/>waitTime: 2000ms"]
     
@@ -317,7 +317,7 @@ flowchart TD
 ```mermaid
 graph TD
     Workflow[WorkflowSchema<br/>工作流]
-    Workflow --> Nodes[nodes: FlowNodeJSON[]]
+    Workflow --> Nodes[nodes: FlowNodeJSON 数组]
     
     Nodes --> Node[FlowNodeJSON<br/>单个节点]
     
@@ -456,7 +456,7 @@ interface JsonSchema {
 
 ```mermaid
 flowchart TD
-    Input["FlowValue 输入<br/>{ type: constant, content: 值 }<br/>或<br/>{ type: ref, content: [id, field] }"]
+    Input["FlowValue 输入<br/>type: constant, content: 值<br/>或<br/>type: ref, content: (id, field)"]
     
     Input --> Resolve[Executor.resolveValue]
     
@@ -466,8 +466,8 @@ flowchart TD
     Check -->|ref| RefProcess[引用解析流程]
     
     RefProcess --> Step1[1. 解析节点 ID]
-    Step1 --> Step2[2. 查找 outputs nodeId]
-    Step2 --> Step3[3. 返回 outputs fieldName]
+    Step1 --> Step2[2. 查找 outputs(nodeId)]
+    Step2 --> Step3[3. 返回 outputs(fieldName)]
     
     DirectReturn --> Result[实际值<br/>any type]
     Step3 --> Result
@@ -494,7 +494,7 @@ flowchart TD
     
     Parse --> CheckResult{条件结果?}
     
-    CheckResult -->|true| ExecuteBlock[执行对应 blocks i<br/>子节点]
+    CheckResult -->|true| ExecuteBlock[执行对应 blocks(i)<br/>子节点]
     CheckResult -->|false| NextCondition[继续评估下一个条件]
     
     ExecuteBlock --> End[返回结果]
@@ -518,7 +518,7 @@ flowchart TD
     ArrayLoop --> ForLoop
     CountLoop --> ForLoop
     
-    ForLoop[for i in 0..items.length-1] --> SetVar[设置循环变量<br/>outputs nodeId_locals = {<br/>  item: items i,<br/>  index: i,<br/>  length: items.length<br/>}]
+    ForLoop[for i in 0..items.length-1] --> SetVar[设置循环变量<br/>outputs(nodeId_locals):<br/>  item: items(i)<br/>  index: i<br/>  length: items.length]
     
     SetVar --> ExecuteBlocks[执行 blocks 中的所有子节点<br/>for block in blocks:<br/>  executeNode block]
     
@@ -1328,13 +1328,13 @@ interface NodeExecutionRecord {
 
 ```mermaid
 flowchart TD
-    Step1["步骤 1: 定义错误码<br/>━━━━━━━━━━━━━━━<br/>文件: src/shared/error-definitions.ts<br/><br/>export const ErrorCode = {<br/>  'MY_ACTION/PARAM_REQUIRED': '...',<br/>  'MY_ACTION/EXECUTION_FAILED': '...',<br/>}<br/><br/>export const ErrorMessage = {<br/>  'MY_ACTION/PARAM_REQUIRED': '缺少必要参数',<br/>  'MY_ACTION/EXECUTION_FAILED': '执行失败',<br/>}"]
+    Step1["步骤 1: 定义错误码<br/>━━━━━━━━━━━━━━━<br/>文件: src/shared/error-definitions.ts<br/><br/>export const ErrorCode = (<br/>  MY_ACTION/PARAM_REQUIRED: ...<br/>  MY_ACTION/EXECUTION_FAILED: ...<br/>)<br/><br/>export const ErrorMessage = (<br/>  MY_ACTION/PARAM_REQUIRED: 缺少必要参数<br/>  MY_ACTION/EXECUTION_FAILED: 执行失败<br/>)"]
     
-    Step2["步骤 2: 创建动作函数<br/>━━━━━━━━━━━━━━━<br/>文件: src/actions/my-action.ts<br/><br/>export function myAction(<br/>  node: FlowNodeJSON,<br/>  context: ExecutionContext<br/>): ActionResult {<br/>  // 1. 获取输入参数<br/>  const inputs = node.data.inputs<br/>  // 2. 参数验证<br/>  if (!inputs.param1) {<br/>    throwActionError('MY_ACTION/PARAM_REQUIRED')<br/>  }<br/>  // 3. 执行动作逻辑<br/>  const result = doSomething(inputs.param1)<br/>  // 4. 返回结果<br/>  return { result }<br/>}"]
+    Step2["步骤 2: 创建动作函数<br/>━━━━━━━━━━━━━━━<br/>文件: src/actions/my-action.ts<br/><br/>export function myAction(<br/>  node, context<br/>): ActionResult (<br/>  1. 获取输入参数<br/>  2. 参数验证<br/>  3. 执行动作逻辑<br/>  4. 返回结果<br/>)"]
     
-    Step3["步骤 3: 注册动作函数<br/>━━━━━━━━━━━━━━━<br/>文件: src/actions/index.ts<br/><br/>import { myAction } from './my-action'<br/><br/>export const ACTION_REGISTRY = {<br/>  click,<br/>  openApp,<br/>  myAction,  // 添加新动作<br/>}"]
+    Step3["步骤 3: 注册动作函数<br/>━━━━━━━━━━━━━━━<br/>文件: src/actions/index.ts<br/><br/>import myAction from ./my-action<br/><br/>export const ACTION_REGISTRY = (<br/>  click, openApp,<br/>  myAction  // 添加新动作<br/>)"]
     
-    Step4["步骤 4: 在工作流中使用<br/>━━━━━━━━━━━━━━━<br/>{<br/>  id: myAction_0,<br/>  type: myAction,<br/>  data: {<br/>    title: 执行自定义动作,<br/>    inputsValues: {<br/>      param1: {<br/>        type: constant,<br/>        content: 测试参数<br/>      }<br/>    }<br/>  }<br/>}"]
+    Step4["步骤 4: 在工作流中使用<br/>━━━━━━━━━━━━━━━<br/>JSON 配置:<br/>  id: myAction_0<br/>  type: myAction<br/>  data:<br/>    title: 执行自定义动作<br/>    inputsValues:<br/>      param1: 测试参数"]
     
     Step5["步骤 5: 测试与验证<br/>━━━━━━━━━━━━━━━<br/>• 构建项目: npm run build<br/>• 运行测试: 使用 demo.ts 或在云手机平台测试<br/>• 验证输出: 检查 ExecutionReport 中的节点记录"]
     
@@ -1360,7 +1360,7 @@ flowchart TD
     
     Get --> Inject["3. 注入数据到 node.data.inputs<br/>• node.data.inputs = inputs"]
     
-    Inject --> Call["4. 调用动作函数<br/>• actionFn node, context"]
+    Inject --> Call["4. 调用动作函数<br/>• actionFn(node, context)"]
     
     Call --> Internal["动作函数内部执行:<br/>• 获取 inputs<br/>• 参数验证<br/>• 执行平台 API<br/>• 返回 ActionResult"]
     
