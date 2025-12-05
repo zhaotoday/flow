@@ -8,13 +8,27 @@
 ## 📋 目录
 
 - [项目简介](#项目简介)
+  - [系统架构](#系统架构)
+  - [执行流程](#执行流程)
+  - [数据流转机制](#数据流转机制)
+  - [节点分类](#节点分类)
 - [构建产物](#构建产物)
 - [快速开始](#快速开始)
 - [执行器使用](#执行器使用)
 - [工作流数据格式](#工作流数据格式)
+  - [整体结构关系](#整体结构关系)
+  - [工作流结构](#工作流结构workflowschema)
+  - [节点结构](#节点结构flownodejson)
+  - [数据值类型](#数据值类型flowvalue)
 - [内置节点](#内置节点)
+  - [节点执行逻辑](#节点执行逻辑)
 - [动作节点](#动作节点)
 - [动作函数开发](#动作函数开发)
+  - [开发流程](#开发流程)
+  - [动作函数执行机制](#动作函数执行机制)
+  - [开发规范](#开发规范)
+  - [开发步骤](#开发步骤)
+  - [最佳实践](#最佳实践)
 - [类型定义](#类型定义)
 
 ## 项目简介
@@ -25,6 +39,157 @@
 - **工作流执行引擎**: 解析和执行工作流定义，支持条件分支、循环等控制流
 - **插件化动作系统**: 灵活的动作节点注册机制，易于扩展
 - **类型安全**: 完整的 TypeScript 类型定义，确保工作流数据的正确性
+
+### 系统架构
+
+```mermaid
+graph TB
+    subgraph Application["应用层 (Application)"]
+        Main["main.ts<br/>(生产环境)"]
+        Demo["demo.ts<br/>(演示)"]
+        Other["其他入口"]
+    end
+    
+    subgraph Engine["执行引擎层 (Engine)"]
+        Executor["Executor (executor.ts)<br/>• 工作流加载与验证<br/>• 节点顺序执行<br/>• 数据流转管理<br/>• 执行报告生成"]
+    end
+    
+    subgraph NodeLayer["节点处理层 (Node Layer)"]
+        BuiltIn["内置节点<br/>• start<br/>• end"]
+        Control["控制流节点<br/>• condition<br/>• loop"]
+        Action["动作节点<br/>• click<br/>• openApp<br/>• waitElem<br/>• ...更多"]
+    end
+    
+    subgraph Registry["动作注册层 (Action Registry)"]
+        ActionReg["ACTION_REGISTRY<br/>(actions/index.ts)<br/>• 插件化注册机制<br/>• 动态函数映射<br/>• 扩展点"]
+    end
+    
+    subgraph Platform["平台适配层 (Platform Adapter)"]
+        Runtime["云手机运行时环境<br/>• runtime.args<br/>• runtime.report<br/>• runtime.end<br/>• globalThis.fetchSync<br/>• 元素查找与操作 API"]
+    end
+    
+    Application --> Engine
+    Engine --> NodeLayer
+    NodeLayer --> Registry
+    Registry --> Platform
+    
+    style Application fill:#e1f5ff
+    style Engine fill:#fff3e0
+    style NodeLayer fill:#f3e5f5
+    style Registry fill:#e8f5e9
+    style Platform fill:#fce4ec
+```
+
+### 执行流程
+
+```mermaid
+flowchart TD
+    Start([开始执行]) --> Init[1. 初始化执行器<br/>• 创建 Executor 实例<br/>• 规范化 initialParams<br/>• 初始化 ExecutionContext]
+    Init --> Load[2. 加载工作流<br/>• 从 URL 加载 或<br/>• 直接使用传入的 JSON]
+    Load --> Validate[3. 验证工作流<br/>• 检查 start 节点唯一性<br/>• 检查 end 节点唯一性]
+    Validate --> Execute[4. 顺序执行节点<br/>遍历 nodes 数组]
+    
+    Execute --> Process[处理单个节点]
+    Process --> Parse[解析 inputsValues]
+    Parse --> Run[执行节点逻辑]
+    Run --> Save[保存 outputs]
+    Save --> Record[记录执行报告]
+    
+    Record --> TypeCheck{节点类型判断}
+    TypeCheck -->|start| StartNode[设置初始参数]
+    TypeCheck -->|control| ControlNode[条件/循环分支]
+    TypeCheck -->|action| ActionNode[调用动作函数]
+    TypeCheck -->|end| EndNode[收集输出结果]
+    
+    StartNode --> Report
+    ControlNode --> Report
+    ActionNode --> Report
+    EndNode --> Report
+    
+    Report[5. 生成执行报告<br/>• status: success/failed<br/>• nodeRecords[]<br/>• duration] --> Upload[6. 上报执行结果<br/>• runtime.end()<br/>• 输出日志]
+    Upload --> End([执行完成])
+    
+    style Start fill:#4caf50,color:#fff
+    style End fill:#4caf50,color:#fff
+    style TypeCheck fill:#ff9800,color:#fff
+    style Report fill:#2196f3,color:#fff
+```
+
+### 数据流转机制
+
+```mermaid
+flowchart TD
+    InitParams[initialParams<br/>初始参数] --> StartNode
+    
+    StartNode["start 节点<br/>outputs: { 视频文件, 视频描述 }"]
+    StartNode -.->|ref 引用| OpenApp
+    
+    OpenApp["openApp 节点<br/>inputs: { url: ref[start, 视频文件] }<br/>outputs: { packageName }"]
+    OpenApp -.->|ref 引用| WaitElem
+    
+    WaitElem["waitElem 节点<br/>inputs: { selector: constant[...] }<br/>outputs: { element }"]
+    WaitElem -.->|ref 引用| Click
+    
+    Click["click 节点<br/>inputs: { selectorRef: ref[waitElem, element] }<br/>outputs: { element }"]
+    Click -.->|ref 引用| EndNode
+    
+    EndNode["end 节点<br/>inputs: { success: constant[true] }"]
+    EndNode --> Report[ExecutionReport]
+    
+    subgraph Storage["数据存储: ExecutionContext.outputs (Map)"]
+        direction TB
+        Store["nodeId → outputs<br/>━━━━━━━━━━━━━━━━<br/>start_0 → { 视频文件: ... }<br/>openApp_0 → { packageName: ... }<br/>waitElem_0 → { element: {...} }<br/>click_0 → { element: {...} }<br/>loop_0_locals → { item: 0, ... }"]
+    end
+    
+    style InitParams fill:#4caf50,color:#fff
+    style Report fill:#2196f3,color:#fff
+    style Storage fill:#fff3e0
+```
+
+### 节点分类
+
+```mermaid
+graph TD
+    Root[FlowNodeJSON]
+    
+    Root --> BuiltIn[内置节点]
+    Root --> Control[控制流节点]
+    Root --> Action[动作节点]
+    
+    BuiltIn --> Start[start<br/>必须且唯一]
+    BuiltIn --> End[end<br/>必须且唯一]
+    
+    Control --> Condition[condition<br/>条件判断]
+    Control --> Loop[loop<br/>循环]
+    
+    Action --> UI[UI操作]
+    Action --> App[应用操作]
+    
+    UI --> Click[click<br/>点击]
+    UI --> WaitElem[waitElem<br/>等待元素]
+    UI --> Swipe[swipe<br/>滑动]
+    UI --> Keyboard[keyboard<br/>键盘]
+    UI --> BackPage[backPage<br/>后退]
+    UI --> WaitTime[waitTime<br/>等待]
+    
+    App --> OpenApp[openApp<br/>打开应用]
+    App --> CloseApp[closeApp<br/>关闭应用]
+    
+    style Root fill:#e3f2fd
+    style BuiltIn fill:#c8e6c9
+    style Control fill:#fff9c4
+    style Action fill:#f8bbd0
+    style Start fill:#4caf50,color:#fff
+    style End fill:#f44336,color:#fff
+    style Condition fill:#ff9800,color:#fff
+    style Loop fill:#ff9800,color:#fff
+```
+
+**节点特性:**
+- **start/end**: 必须且唯一，定义工作流边界
+- **condition**: 支持多分支条件判断 (eq/ne/gt/gte/lt/lte)
+- **loop**: 支持数组循环(loopFor)和次数循环(count)
+- **动作节点**: 可扩展，通过 ACTION_REGISTRY 注册
 
 ## 📦 构建产物
 
@@ -112,7 +277,71 @@ try {
 4. **按序执行节点**: 遍历节点数组，依次执行每个节点
 5. **生成报告**: 收集执行记录，生成执行报告
 
+### 完整示例工作流
+
+以下是一个 TikTok 自动发布视频的完整工作流示例：
+
+```mermaid
+flowchart TD
+    Start["① start 节点<br/>━━━━━━━━━━<br/>提供初始参数:<br/>• 视频文件: https://example.com/video.mp4<br/>• 视频描述: 这是一个测试视频"]
+    
+    OpenApp["② openApp 节点<br/>━━━━━━━━━━<br/>打开 TikTok 应用<br/>packageName: com.zhiliaoapp.musically"]
+    
+    Wait1["③ waitTime 节点<br/>━━━━━━━━━━<br/>等待应用启动完成<br/>waitTime: 3000ms"]
+    
+    WaitElem["④ waitElement 节点<br/>━━━━━━━━━━<br/>等待'发布'按钮出现<br/>selector: [{ mode: textContains, text: 发布 }]<br/>输出: element (元素对象)"]
+    
+    Click["⑤ click 节点<br/>━━━━━━━━━━<br/>点击发布按钮<br/>selectorRef: ref[waitElement_0, element]<br/>actionEvent: click"]
+    
+    Wait2["⑥ waitTime 节点<br/>━━━━━━━━━━<br/>等待上传页面加载<br/>waitTime: 2000ms"]
+    
+    End["⑦ end 节点<br/>━━━━━━━━━━<br/>结束工作流<br/>success: true"]
+    
+    Start -->|输出参数| OpenApp
+    OpenApp --> Wait1
+    Wait1 --> WaitElem
+    WaitElem -.->|输出元素| Click
+    Click -.->|引用元素| Wait2
+    Wait2 --> End
+    
+    style Start fill:#4caf50,color:#fff
+    style End fill:#f44336,color:#fff
+    style WaitElem fill:#2196f3,color:#fff
+    style Click fill:#ff9800,color:#fff
+```
+
 ## 工作流数据格式
+
+### 整体结构关系
+
+```mermaid
+graph TD
+    Workflow[WorkflowSchema<br/>工作流]
+    Workflow --> Nodes[nodes: FlowNodeJSON[]]
+    
+    Nodes --> Node[FlowNodeJSON<br/>单个节点]
+    
+    Node --> NodeProps["• id: string<br/>• type: string<br/>• blocks?: FlowNodeJSON[]<br/>• data: { ... }"]
+    
+    NodeProps --> Data["data 属性"]
+    Data --> DataFields["• title?: string<br/>• inputsValues?: Record<string, FlowValue><br/>• inputs?: JsonSchema<br/>• outputs?: JsonSchema<br/>• loopFor?: FlowValue"]
+    
+    DataFields --> FlowValue
+    DataFields --> JsonSchema
+    
+    FlowValue[FlowValue<br/>数据值类型] --> Constant[constant<br/>常量类型]
+    FlowValue --> Ref[ref<br/>引用类型]
+    
+    JsonSchema[JsonSchema<br/>定义数据结构] --> InputSchema[定义输入结构]
+    JsonSchema --> OutputSchema[定义输出结构]
+    
+    style Workflow fill:#e1f5ff
+    style Node fill:#fff3e0
+    style FlowValue fill:#f3e5f5
+    style JsonSchema fill:#e8f5e9
+    style Constant fill:#c8e6c9
+    style Ref fill:#ffccbc
+```
 
 ### 工作流结构(WorkflowSchema)
 
@@ -223,7 +452,85 @@ interface JsonSchema {
 }
 ```
 
+### FlowValue 解析流程
+
+```mermaid
+flowchart TD
+    Input["FlowValue 输入<br/>{ type: constant, content: 值 }<br/>或<br/>{ type: ref, content: [id, field] }"]
+    
+    Input --> Resolve[Executor.resolveValue]
+    
+    Resolve --> Check{type 类型?}
+    
+    Check -->|constant| DirectReturn[直接返回 content]
+    Check -->|ref| RefProcess[引用解析流程]
+    
+    RefProcess --> Step1[1. 解析节点 ID]
+    Step1 --> Step2[2. 查找 outputs nodeId]
+    Step2 --> Step3[3. 返回 outputs fieldName]
+    
+    DirectReturn --> Result[实际值<br/>any type]
+    Step3 --> Result
+    
+    style Input fill:#e3f2fd
+    style Check fill:#fff9c4
+    style DirectReturn fill:#c8e6c9
+    style RefProcess fill:#ffccbc
+    style Result fill:#4caf50,color:#fff
+```
+
 ## 内置节点
+
+### 节点执行逻辑
+
+#### 条件节点 (condition)
+
+```mermaid
+flowchart TD
+    Start[开始] --> Read[读取 conditions 数组<br/>{key:if_true, value:{...}}]
+    Read --> Evaluate[依次评估每个条件]
+    
+    Evaluate --> Parse[解析 left FlowValue<br/>解析 right FlowValue<br/>应用 operator]
+    
+    Parse --> CheckResult{条件结果?}
+    
+    CheckResult -->|true| ExecuteBlock[执行对应 blocks i<br/>子节点]
+    CheckResult -->|false| NextCondition[继续评估下一个条件]
+    
+    ExecuteBlock --> End[返回结果]
+    NextCondition --> Evaluate
+    
+    style Start fill:#4caf50,color:#fff
+    style CheckResult fill:#ff9800,color:#fff
+    style ExecuteBlock fill:#2196f3,color:#fff
+    style End fill:#4caf50,color:#fff
+```
+
+#### 循环节点 (loop)
+
+```mermaid
+flowchart TD
+    Start[开始] --> CheckType{判断循环方式}
+    
+    CheckType -->|loopFor| ArrayLoop[数组循环<br/>items = 解析数组]
+    CheckType -->|count| CountLoop[次数循环<br/>items = 0,1,2,...,n-1]
+    
+    ArrayLoop --> ForLoop
+    CountLoop --> ForLoop
+    
+    ForLoop[for i in 0..items.length-1] --> SetVar[设置循环变量<br/>outputs nodeId_locals = {<br/>  item: items i,<br/>  index: i,<br/>  length: items.length<br/>}]
+    
+    SetVar --> ExecuteBlocks[执行 blocks 中的所有子节点<br/>for block in blocks:<br/>  executeNode block]
+    
+    ExecuteBlocks --> CheckNext{还有下一项?}
+    CheckNext -->|是| ForLoop
+    CheckNext -->|否| End[返回执行结果]
+    
+    style Start fill:#4caf50,color:#fff
+    style CheckType fill:#ff9800,color:#fff
+    style ForLoop fill:#2196f3,color:#fff
+    style End fill:#4caf50,color:#fff
+```
 
 ### 开始节点(start)
 
@@ -1016,6 +1323,58 @@ interface NodeExecutionRecord {
 ```
 
 ## 动作函数开发
+
+### 开发流程
+
+```mermaid
+flowchart TD
+    Step1["步骤 1: 定义错误码<br/>━━━━━━━━━━━━━━━<br/>文件: src/shared/error-definitions.ts<br/><br/>export const ErrorCode = {<br/>  'MY_ACTION/PARAM_REQUIRED': '...',<br/>  'MY_ACTION/EXECUTION_FAILED': '...',<br/>}<br/><br/>export const ErrorMessage = {<br/>  'MY_ACTION/PARAM_REQUIRED': '缺少必要参数',<br/>  'MY_ACTION/EXECUTION_FAILED': '执行失败',<br/>}"]
+    
+    Step2["步骤 2: 创建动作函数<br/>━━━━━━━━━━━━━━━<br/>文件: src/actions/my-action.ts<br/><br/>export function myAction(<br/>  node: FlowNodeJSON,<br/>  context: ExecutionContext<br/>): ActionResult {<br/>  // 1. 获取输入参数<br/>  const inputs = node.data.inputs<br/>  // 2. 参数验证<br/>  if (!inputs.param1) {<br/>    throwActionError('MY_ACTION/PARAM_REQUIRED')<br/>  }<br/>  // 3. 执行动作逻辑<br/>  const result = doSomething(inputs.param1)<br/>  // 4. 返回结果<br/>  return { result }<br/>}"]
+    
+    Step3["步骤 3: 注册动作函数<br/>━━━━━━━━━━━━━━━<br/>文件: src/actions/index.ts<br/><br/>import { myAction } from './my-action'<br/><br/>export const ACTION_REGISTRY = {<br/>  click,<br/>  openApp,<br/>  myAction,  // 添加新动作<br/>}"]
+    
+    Step4["步骤 4: 在工作流中使用<br/>━━━━━━━━━━━━━━━<br/>{<br/>  id: myAction_0,<br/>  type: myAction,<br/>  data: {<br/>    title: 执行自定义动作,<br/>    inputsValues: {<br/>      param1: {<br/>        type: constant,<br/>        content: 测试参数<br/>      }<br/>    }<br/>  }<br/>}"]
+    
+    Step5["步骤 5: 测试与验证<br/>━━━━━━━━━━━━━━━<br/>• 构建项目: npm run build<br/>• 运行测试: 使用 demo.ts 或在云手机平台测试<br/>• 验证输出: 检查 ExecutionReport 中的节点记录"]
+    
+    Step1 --> Step2
+    Step2 --> Step3
+    Step3 --> Step4
+    Step4 --> Step5
+    
+    style Step1 fill:#e3f2fd
+    style Step2 fill:#f3e5f5
+    style Step3 fill:#fff9c4
+    style Step4 fill:#e8f5e9
+    style Step5 fill:#4caf50,color:#fff
+```
+
+### 动作函数执行机制
+
+```mermaid
+flowchart TD
+    Start[Executor.executeNode] --> Parse["1. 解析 inputsValues<br/>• resolveValue FlowValue<br/>• 处理 constant / ref<br/>• 生成 inputs 对象"]
+    
+    Parse --> Get["2. 获取动作函数<br/>• getActionFunction node.type<br/>• 从 ACTION_REGISTRY 查找"]
+    
+    Get --> Inject["3. 注入数据到 node.data.inputs<br/>• node.data.inputs = inputs"]
+    
+    Inject --> Call["4. 调用动作函数<br/>• actionFn node, context"]
+    
+    Call --> Internal["动作函数内部执行:<br/>• 获取 inputs<br/>• 参数验证<br/>• 执行平台 API<br/>• 返回 ActionResult"]
+    
+    Internal --> Handle["5. 处理返回值<br/>• 提取 result.result<br/>• 保存到 context.outputs"]
+    
+    Handle --> Record["6. 记录执行报告<br/>• NodeExecutionRecord<br/>• status / duration / outputs"]
+    
+    Record --> End([完成])
+    
+    style Start fill:#4caf50,color:#fff
+    style Call fill:#ff9800,color:#fff
+    style Internal fill:#2196f3,color:#fff
+    style End fill:#4caf50,color:#fff
+```
 
 ### 开发规范
 
