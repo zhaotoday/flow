@@ -456,7 +456,7 @@ interface JsonSchema {
 
 ```mermaid
 flowchart TD
-    Input["FlowValue 输入<br/>type: constant, content: 值<br/>或<br/>type: ref, content: (id, field)"]
+    Input["FlowValue 输入<br/>type: constant, content: 值<br/>或<br/>type: ref, content: id, field"]
     
     Input --> Resolve[Executor.resolveValue]
     
@@ -466,8 +466,8 @@ flowchart TD
     Check -->|ref| RefProcess[引用解析流程]
     
     RefProcess --> Step1[1. 解析节点 ID]
-    Step1 --> Step2[2. 查找 outputs(nodeId)]
-    Step2 --> Step3[3. 返回 outputs(fieldName)]
+    Step1 --> Step2[2. 查找 outputs 中的 nodeId]
+    Step2 --> Step3[3. 返回对应的 fieldName 值]
     
     DirectReturn --> Result[实际值<br/>any type]
     Step3 --> Result
