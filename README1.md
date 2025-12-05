@@ -487,14 +487,14 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Start[开始] --> Read[读取 conditions 数组<br/>{key:if_true, value:{...}}]
+    Start[开始] --> Read[读取 conditions 数组<br/>key:if_true, value:...]
     Read --> Evaluate[依次评估每个条件]
     
     Evaluate --> Parse[解析 left FlowValue<br/>解析 right FlowValue<br/>应用 operator]
     
     Parse --> CheckResult{条件结果?}
     
-    CheckResult -->|true| ExecuteBlock[执行对应 blocks(i)<br/>子节点]
+    CheckResult -->|true| ExecuteBlock[执行对应 blocks 中第 i 个子节点]
     CheckResult -->|false| NextCondition[继续评估下一个条件]
     
     ExecuteBlock --> End[返回结果]
@@ -518,9 +518,9 @@ flowchart TD
     ArrayLoop --> ForLoop
     CountLoop --> ForLoop
     
-    ForLoop[for i in 0..items.length-1] --> SetVar[设置循环变量<br/>outputs(nodeId_locals):<br/>  item: items(i)<br/>  index: i<br/>  length: items.length]
+    ForLoop[for i in 0..items.length-1] --> SetVar[设置循环变量<br/>outputs 中存储 nodeId_locals<br/>包含: item, index, length]
     
-    SetVar --> ExecuteBlocks[执行 blocks 中的所有子节点<br/>for block in blocks:<br/>  executeNode block]
+    SetVar --> ExecuteBlocks[执行 blocks 中的所有子节点<br/>遍历每个 block 并执行]
     
     ExecuteBlocks --> CheckNext{还有下一项?}
     CheckNext -->|是| ForLoop
