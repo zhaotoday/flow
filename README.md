@@ -13,6 +13,7 @@
 - [react-diagrams](https://github.com/projectstorm/react-diagrams)
 
 #### 开源
+- [skyvern](https://github.com/Skyvern-AI/skyvern)
 - [rete](https://github.com/retejs/rete)
 - [sim](https://github.com/simstudioai/sim)
 - [flowgram-ai-rule-engine](https://github.com/boommanpro/flowgram-ai-rule-engine)
@@ -30,6 +31,7 @@
 - [Accessibility Insights for Windows](https://accessibilityinsights.io/)
 - UISpy / UIAVerify
 - [WinAppDriver](https://github.com/microsoft/WinAppDriver)
+
 
 
 
