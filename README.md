@@ -13,6 +13,7 @@
 - [react-diagrams](https://github.com/projectstorm/react-diagrams)
 
 #### 开源
+- [astron-rpa](https://github.com/iflytek/astron-rpa)
 - [skyvern](https://github.com/Skyvern-AI/skyvern)
 - [rete](https://github.com/retejs/rete)
 - [sim](https://github.com/simstudioai/sim)
@@ -31,6 +32,7 @@
 - [Accessibility Insights for Windows](https://accessibilityinsights.io/)
 - UISpy / UIAVerify
 - [WinAppDriver](https://github.com/microsoft/WinAppDriver)
+
 
 
 
