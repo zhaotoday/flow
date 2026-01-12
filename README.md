@@ -12,6 +12,9 @@
 - [reaflow](https://reaflow.dev/)
 - [react-diagrams](https://github.com/projectstorm/react-diagrams)
 
+#### 文章
+- [流程引擎、工作流、规则引擎、编排系统、表达式引擎……天呐，我到底该用哪个？](https://juejin.cn/post/7587299670642606086)
+
 #### 开源
 - [voltagent](https://github.com/VoltAgent/voltagent)
 - [OpenAdapt](https://github.com/OpenAdaptAI/OpenAdapt)
@@ -35,6 +38,7 @@
 - [Accessibility Insights for Windows](https://accessibilityinsights.io/)
 - UISpy / UIAVerify
 - [WinAppDriver](https://github.com/microsoft/WinAppDriver)
+
 
 
 
