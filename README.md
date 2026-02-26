@@ -12,6 +12,9 @@
 - [reaflow](https://reaflow.dev/)
 - [react-diagrams](https://github.com/projectstorm/react-diagrams)
 
+#### 视频
+- [工作流编辑器 + AI Agent](https://www.bilibili.com/video/BV1mTcqzTE2Y/)
+
 #### 文章
 - [流程引擎、工作流、规则引擎、编排系统、表达式引擎……天呐，我到底该用哪个？](https://juejin.cn/post/7587299670642606086)
 
@@ -40,6 +43,7 @@
 - [Accessibility Insights for Windows](https://accessibilityinsights.io/)
 - UISpy / UIAVerify
 - [WinAppDriver](https://github.com/microsoft/WinAppDriver)
+
 
 
 
