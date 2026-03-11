@@ -38,6 +38,7 @@
 
 #### 平台
 - [pipedream](https://pipedream.com/)
+- [JNPF Flow](https://www.jnpfsoft.com/workflow/)
 
 #### 工具
 - [Appium Inspector](https://github.com/appium/appium-inspector)
@@ -45,6 +46,7 @@
 - [Accessibility Insights for Windows](https://accessibilityinsights.io/)
 - UISpy / UIAVerify
 - [WinAppDriver](https://github.com/microsoft/WinAppDriver)
+
 
 
 
