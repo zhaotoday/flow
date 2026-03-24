@@ -20,6 +20,7 @@
 - [流程引擎、工作流、规则引擎、编排系统、表达式引擎……天呐，我到底该用哪个？](https://juejin.cn/post/7587299670642606086)
 
 #### 开源
+- [trigger.dev](https://github.com/triggerdotdev/trigger.dev)
 - [activepieces](https://github.com/activepieces/activepieces)
 - [vercel/workflow](https://github.com/vercel/workflow)
 - [JsonFlow](https://flow.pig4cloud.com/)
