@@ -16,6 +16,7 @@
 - [工作流编辑器 + AI Agent](https://www.bilibili.com/video/BV1mTcqzTE2Y/)
 
 #### 文章
+- [工作流引擎对比：Inngest VS n8n VS Zeebe](https://juejin.cn/post/7504933816291016730)
 - [动作流执行引擎与工作流引擎](https://juejin.cn/post/7535651734142042150)
 - [流程引擎、工作流、规则引擎、编排系统、表达式引擎……天呐，我到底该用哪个？](https://juejin.cn/post/7587299670642606086)
 
