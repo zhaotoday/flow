@@ -1,4 +1,5 @@
 #### 产品
+- [实在智能](https://www.ai-indeed.com/)
 - [八爪鱼](https://rpa.bazhuayu.com/)
 - [影刀](https://www.yingdao.com/)
 
