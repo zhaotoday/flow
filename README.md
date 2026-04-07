@@ -1,3 +1,7 @@
+#### 产品
+- [八爪鱼](https://rpa.bazhuayu.com/)
+- [影刀](https://www.yingdao.com/)
+
 #### Vue
 - [vueflow](https://vueflow.dev/)
 - [X6](https://github.com/antvis/X6)
