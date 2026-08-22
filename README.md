@@ -27,6 +27,7 @@
 - [流程引擎、工作流、规则引擎、编排系统、表达式引擎……天呐，我到底该用哪个？](https://juejin.cn/post/7587299670642606086)
 
 #### 开源
+- [smart-flow](https://github.com/MrXujiang/smart-flow)
 - [gaia-workflow-engine](https://github.com/boommanpro/gaia-workflow-engine)
 - [awesome-workflow-engines](https://github.com/meirwah/awesome-workflow-engines)
 - [ChatDev](https://github.com/OpenBMB/ChatDev)
